@@ -25,6 +25,17 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
+	compileOnly 'org.projectlombok:lombok:1.18.30'
+	annotationProcessor 'org.projectlombok:lombok:1.18.30'
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly('io.jsonwebtoken:jjwt-jackson:0.11.5')
+	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.767'
+	implementation 'org.hibernate.validator:hibernate-validator:8.0.0.Final'
+
+
 }
 
 tasks.named('test') {
