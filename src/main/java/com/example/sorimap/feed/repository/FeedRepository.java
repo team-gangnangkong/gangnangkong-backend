@@ -19,7 +19,7 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
     List<Feed> findByTypeAndAddressContainingIgnoreCaseOrderByLikesDesc(FeedType type, String address, Pageable pageable);
     List<Feed> findByAddressContainingIgnoreCaseOrderByLikesDesc(String address, Pageable pageable);
 
-    // 위치 범위 조회 (반경 검색)
+    // 위치 범위 조회
     List<Feed> findByLatBetweenAndLngBetween(double minLat, double maxLat, double minLng, double maxLng);
 
     // 위치 범위 + 감정 필터
@@ -31,13 +31,11 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
     // 위치 범위 + 상태 필터
     List<Feed> findByLatBetweenAndLngBetweenAndStatus(double minLat, double maxLat, double minLng, double maxLng, FeedStatus status);
 
-    // 🔹 locationId 기반 조회
-    List<Feed> findByLocationId(Long locationId);
+    // ✅ kakaoPlaceId 기반 조회 (JPA Join)
+    List<Feed> findByLocation_KakaoPlaceId(String kakaoPlaceId);
+    List<Feed> findByStatusAndLocation_KakaoPlaceId(FeedStatus status, String kakaoPlaceId);
 
-    // 🔹 locationId + 상태 기반 조회
-    List<Feed> findByStatusAndLocationId(FeedStatus status, Long locationId);
-
-    // ✅ 내가 작성한 모든 피드 (민원/문화 전체 포함)
+    // ✅ 내가 작성한 모든 피드
     List<Feed> findByUserId(Long userId);
 
     // ✅ 내가 작성한 특정 피드 상세

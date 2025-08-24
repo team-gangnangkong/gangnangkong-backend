@@ -22,14 +22,9 @@ public class KakaoService {
     @Value("${kakao.api.key}")
     private String restApiKey;
 
-    @Value("${kakao.redirect_uri.local}")
-    private String localRedirectUri;
-
-    @Value("${kakao.redirect_uri.postman}")
-    private String postmanRedirectUri;
-
-    // 실행 모드: local 또는 postman (환경에 맞게 변경)
-    private final String currentMode = "local";
+    // ✅ 배포용 redirect_uri만 사용
+    @Value("${kakao.redirect_uri}")
+    private String redirectUri;
 
     private final KakaoUserRepository kakaoUserRepository;
     private final RestTemplate restTemplate = new RestTemplate();
@@ -43,13 +38,17 @@ public class KakaoService {
      */
     public String kakaoGetAccessViaCode(String code) {
         try {
-            String redirectUri = currentMode.equals("postman") ? postmanRedirectUri : localRedirectUri;
+            log.info("✅ 카카오 로그인 요청 시작");
+            log.info("✅ 전달된 인가 코드: {}", code);
+            log.info("✅ 현재 redirectUri 설정값(application.properties): {}", redirectUri);
 
             MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
             body.add("code", code);
             body.add("client_id", restApiKey);
-            body.add("redirect_uri", redirectUri);
+            body.add("redirect_uri", redirectUri);   // ✅ 콘솔 등록 URI와 동일해야 함
             body.add("grant_type", "authorization_code");
+
+            log.info("✅ 카카오 토큰 요청 body: {}", body);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -63,19 +62,26 @@ public class KakaoService {
                     JsonNode.class
             );
 
+            // ✅ 응답 전체 로그
+            log.info("✅ 카카오 토큰 요청 응답 상태: {}", responseNode.getStatusCode());
+            log.info("✅ 카카오 토큰 요청 응답 body: {}", responseNode.getBody());
+
             if (responseNode.getBody() == null || responseNode.getBody().get("access_token") == null) {
                 throw new RuntimeException("카카오 Access Token 발급 실패: " + responseNode);
             }
 
-            return responseNode.getBody().get("access_token").asText();
+            String kakaoAccessToken = responseNode.getBody().get("access_token").asText();
+            log.info("✅ 카카오 Access Token 발급 성공: {}", kakaoAccessToken);
+
+            return kakaoAccessToken;
         } catch (Exception e) {
-            log.error("카카오 Access Token 발급 중 오류", e);
+            log.error("❌ 카카오 Access Token 발급 중 오류", e);
             throw new RuntimeException("카카오 Access Token 발급 실패", e);
         }
     }
 
     /**
-     * 액세스 토큰으로 카카오 사용자 정보 조회 및 저장
+     * 카카오 Access Token으로 사용자 정보 조회 + DB 저장
      */
     @Transactional
     public KakaoUser kakaoGetUserInfoViaAccessToken(String accessToken) {
@@ -97,6 +103,7 @@ public class KakaoService {
             }
 
             JsonNode userInfo = responseNode.getBody();
+            log.info("✅ 카카오 사용자 정보 조회 응답: {}", userInfo);
 
             Long kakaoId = userInfo.path("id").asLong();
             String nickname = userInfo.path("properties").path("nickname").asText(null);
@@ -112,6 +119,7 @@ public class KakaoService {
                 }
             }
 
+            // DB 저장 (있으면 업데이트, 없으면 신규)
             KakaoUser kakaoUser = kakaoUserRepository.findById(kakaoId).orElseGet(() -> {
                 KakaoUser newUser = new KakaoUser();
                 newUser.setKakaoId(kakaoId);
@@ -126,7 +134,7 @@ public class KakaoService {
 
             return kakaoUser;
         } catch (Exception e) {
-            log.error("카카오 사용자 정보 조회 실패", e);
+            log.error("❌ 카카오 사용자 정보 조회 실패", e);
             throw new RuntimeException("카카오 사용자 정보 조회 실패", e);
         }
     }

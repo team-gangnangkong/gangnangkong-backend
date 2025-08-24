@@ -21,22 +21,22 @@ public class FeedReadService {
 
     private final FeedRepository feedRepository;
     private final CommentRepository commentRepository;
-    private final KakaoUserRepository kakaoUserRepository; // ✅ userId → nickname 변환용
+    private final KakaoUserRepository kakaoUserRepository;
 
-    /** 전체 커뮤니티 조회 (locationId 필터) */
-    public List<FeedResponseDto> getAllFeeds(Long locationId) {
-        List<Feed> feeds = (locationId == null)
+    /** 전체 커뮤니티 조회 */
+    public List<FeedResponseDto> getAllFeeds(String kakaoPlaceId) {
+        List<Feed> feeds = (kakaoPlaceId == null)
                 ? feedRepository.findAll()
-                : feedRepository.findByLocationId(locationId);
+                : feedRepository.findByLocation_KakaoPlaceId(kakaoPlaceId);
 
         return feeds.stream().map(this::convertToDto).collect(Collectors.toList());
     }
 
-    /** 상태별 조회 + locationId 선택 필터 */
-    public List<FeedResponseDto> getFeedsByStatus(FeedStatus status, Long locationId) {
-        List<Feed> feeds = (locationId == null)
+    /** 상태별 조회 + 장소 필터 */
+    public List<FeedResponseDto> getFeedsByStatus(FeedStatus status, String kakaoPlaceId) {
+        List<Feed> feeds = (kakaoPlaceId == null)
                 ? feedRepository.findByStatus(status)
-                : feedRepository.findByStatusAndLocationId(status, locationId);
+                : feedRepository.findByStatusAndLocation_KakaoPlaceId(status, kakaoPlaceId);
 
         return feeds.stream().map(this::convertToDto).collect(Collectors.toList());
     }
@@ -48,23 +48,20 @@ public class FeedReadService {
         return convertToDto(feed);
     }
 
-    /** ✅ 내가 작성한 민원 목록 */
+    /** 내가 작성한 민원 목록 */
     public List<MyFeedResponseDto> getMyFeeds(Long userId) {
         return feedRepository.findByUserId(userId).stream()
                 .map(feed -> {
                     int commentCount = (int) commentRepository.countByFeedId(feed.getId());
-
-                    // ✅ 작성자 닉네임 조회
                     String nickname = kakaoUserRepository.findById(feed.getUserId())
                             .map(u -> u.getNickname())
                             .orElse("알 수 없음");
-
                     return MyFeedResponseDto.fromEntity(feed, commentCount, nickname);
                 })
                 .collect(Collectors.toList());
     }
 
-    /** ✅ 내가 작성한 민원 상세 */
+    /** 내가 작성한 민원 상세 */
     public MyFeedDetailResponseDto getMyFeedDetail(Long userId, Long feedId) {
         Feed feed = feedRepository.findByIdAndUserId(feedId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 민원이 존재하지 않거나 본인의 글이 아닙니다."));
@@ -85,7 +82,6 @@ public class FeedReadService {
                         })
                         .toList();
 
-        // ✅ 작성자 닉네임 조회
         String authorNickname = kakaoUserRepository.findById(feed.getUserId())
                 .map(u -> u.getNickname())
                 .orElse("알 수 없음");
@@ -93,14 +89,13 @@ public class FeedReadService {
         return MyFeedDetailResponseDto.fromEntity(feed, commentCount, comments, authorNickname);
     }
 
-    /** Feed → FeedResponseDto 변환 (커뮤니티 전체 조회용) */
+    /** Feed → FeedResponseDto 변환 */
     private FeedResponseDto convertToDto(Feed feed) {
         List<String> images = null;
         if (feed.getImageUrls() != null && !feed.getImageUrls().isBlank()) {
             images = Arrays.asList(feed.getImageUrls().split(","));
         }
 
-        // ✅ 작성자 닉네임 조회
         String nickname = kakaoUserRepository.findById(feed.getUserId())
                 .map(u -> u.getNickname())
                 .orElse("알 수 없음");
@@ -115,11 +110,13 @@ public class FeedReadService {
                 .address(feed.getAddress())
                 .lat(feed.getLat())
                 .lng(feed.getLng())
-                .locationId(feed.getLocationId())
+                .kakaoPlaceId(feed.getLocation() != null ? feed.getLocation().getKakaoPlaceId() : null)
                 .likes(feed.getLikes())
                 .imageUrls(images)
-                .userNickname(nickname) // ✅ 작성자 닉네임 변환
+                .userNickname(nickname)
                 .createdAt(feed.getCreatedAt())
                 .build();
     }
 }
+
+

@@ -22,10 +22,11 @@ public class FeedResponseDto {
     private Double lat;
     private Double lng;
 
-    private Long locationId;
+    // ✅ 장소 식별자는 kakaoPlaceId로 제공
+    private String kakaoPlaceId;
 
     private int likes;
     private List<String> imageUrls;
-    private String userNickname;   // ✅ 작성자 닉네임
+    private String userNickname;
     private LocalDateTime createdAt;
 }

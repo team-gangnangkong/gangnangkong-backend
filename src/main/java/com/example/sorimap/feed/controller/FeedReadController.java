@@ -19,21 +19,21 @@ public class FeedReadController {
 
     private final FeedReadService feedReadService;
 
-    /** 전체 커뮤니티 조회 (locationId 선택 필터) */
+    /** 전체 커뮤니티 조회 (kakaoPlaceId 선택 필터) */
     @GetMapping
     public ResponseEntity<List<FeedResponseDto>> getAllFeeds(
-            @RequestParam(required = false) Long locationId
+            @RequestParam(required = false) String kakaoPlaceId
     ) {
-        return ResponseEntity.ok(feedReadService.getAllFeeds(locationId));
+        return ResponseEntity.ok(feedReadService.getAllFeeds(kakaoPlaceId));
     }
 
-    /** 상태별 조회 (예: /api/feeds/status/IN_PROGRESS?locationId=123) */
+    /** 상태별 조회 (예: /api/feeds/status/OPEN?kakaoPlaceId=123456) */
     @GetMapping("/status/{status}")
     public ResponseEntity<List<FeedResponseDto>> getFeedsByStatus(
             @PathVariable FeedStatus status,
-            @RequestParam(required = false) Long locationId
+            @RequestParam(required = false) String kakaoPlaceId
     ) {
-        return ResponseEntity.ok(feedReadService.getFeedsByStatus(status, locationId));
+        return ResponseEntity.ok(feedReadService.getFeedsByStatus(status, kakaoPlaceId));
     }
 
     /** 단건 조회 */

@@ -30,14 +30,13 @@ public class FeedWriteService {
         KakaoUser user = kakaoUserRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        // 📍 위치 처리
-        if (dto.getLocationId() != null) {
-            LocationEntity location = locationRepository.findById(dto.getLocationId())
-                    .orElseThrow(() -> new IllegalArgumentException("선택한 장소를 찾을 수 없습니다."));
-            dto.setLat(location.getLatitude());
-            dto.setLng(location.getLongitude());
-            dto.setAddress(location.getAddress());
+        // 📍 위치 처리 (kakaoPlaceId 기준)
+        if (dto.getKakaoPlaceId() == null) {
+            throw new IllegalArgumentException("kakaoPlaceId는 필수입니다.");
         }
+
+        LocationEntity location = locationRepository.findByKakaoPlaceId(dto.getKakaoPlaceId())
+                .orElseThrow(() -> new IllegalArgumentException("선택한 장소를 찾을 수 없습니다."));
 
         // 🖼️ 이미지 업로드 (여러 장)
         List<String> imageUrls = new ArrayList<>();
@@ -63,10 +62,9 @@ public class FeedWriteService {
                 .lng(dto.getLng())
                 .likes(0)
                 .imageUrls(String.join(",", imageUrls))
-                .locationId(dto.getLocationId())
-                .userId(user.getKakaoId())   // ✅ 올바른 필드명
+                .location(location)          // ✅ FK로 저장
+                .userId(user.getKakaoId())   // 작성자
                 .build();
-
 
         return feedRepository.save(feed);
     }

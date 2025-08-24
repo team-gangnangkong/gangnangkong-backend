@@ -1,5 +1,6 @@
 package com.example.sorimap.feed.domain;
 
+import com.example.sorimap.search.domain.LocationEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -26,29 +27,30 @@ public class Feed {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private FeedType type; // 민원 / 문화
+    private FeedType type; // MINWON / MUNHWA
 
     @Enumerated(EnumType.STRING)
-    private Sentiment sentiment; // 긍정 / 부정 / 중립
+    private Sentiment sentiment; // POSITIVE / NEGATIVE / NEUTRAL
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private FeedStatus status = FeedStatus.OPEN; // 기본값: 미해결
+    private FeedStatus status = FeedStatus.OPEN;
 
     private String address;
     private Double lat;
     private Double lng;
 
-    // 🔹 LocationEntity FK 대신 ID만 저장
-    @Column(name = "location_id")
-    private Long locationId;
+    // ✅ LocationEntity FK 연결
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_id")
+    private LocationEntity location;
 
     @Builder.Default
     @Column(nullable = false)
     private int likes = 0;
 
-    @Column(columnDefinition = "TEXT") // 여러 장 URL 콤마 저장
+    @Column(columnDefinition = "TEXT")
     private String imageUrls;
 
     @CreationTimestamp

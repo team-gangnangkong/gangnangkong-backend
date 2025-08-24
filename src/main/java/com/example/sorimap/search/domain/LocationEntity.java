@@ -1,25 +1,35 @@
 package com.example.sorimap.search.domain;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@Table(name = "location")
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
+@Table(
+        name = "location",
+        uniqueConstraints = @UniqueConstraint(name = "uk_location_kakao_place", columnNames = "kakao_place_id")
+)
 public class LocationEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String initials; // 초성
-    private String name; // 장소 이름
-    private String address; // 주소
-    private double latitude; // 위도
-    private double longitude; // 경도
+    @Column(name = "kakao_place_id", nullable = false, length = 64)
+    private String kakaoPlaceId;   // ✅ getKakaoPlaceId()/setKakaoPlaceId()
+
+    private String initials;       // (검색용)
+
+    @Column(nullable = false)
+    private String name;           // ✅ getName()/setName()
+
+    @Column(nullable = false)
+    private String address;        // ✅ getAddress()/setAddress()
+
+    @Column(nullable = false)
+    private double latitude;       // ✅ getLatitude()/setLatitude()
+
+    @Column(nullable = false)
+    private double longitude;      // ✅ getLongitude()/setLongitude()
 }

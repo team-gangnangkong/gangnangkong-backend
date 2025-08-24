@@ -43,35 +43,38 @@ public class KakaoController {
             String accessToken = jwtService.createAccessToken(kakaoUser.getKakaoId());
             String refreshToken = jwtService.createRefreshToken(kakaoUser.getKakaoId());
 
-            // 4. 쿠키에 저장
+            // 4. 쿠키에 저장 (운영 환경: HTTPS + SameSite=None)
             ResponseCookie accessCookie = ResponseCookie.from("ACCESS-TOKEN", accessToken)
                     .httpOnly(true)
-                    .secure(false) // TODO: 운영 HTTPS 배포 시 true로 변경
-                    .sameSite("Lax")
+                    .secure(true)             // ✅ HTTPS 필수
+                    .sameSite("None")         // ✅ 크로스사이트 허용
+                    //.domain("sorimap.it.com") // 🔥 일단 주석 (도메인 강제 시 쿠키 저장 안 될 수 있음)
                     .path("/")
-                    .maxAge(60 * 60) // 1시간
+                    .maxAge(60 * 60)          // 1시간
                     .build();
 
             ResponseCookie refreshCookie = ResponseCookie.from("REFRESH-TOKEN", refreshToken)
                     .httpOnly(true)
-                    .secure(false) // TODO: 운영 HTTPS 배포 시 true로 변경
-                    .sameSite("Lax")
+                    .secure(true)
+                    .sameSite("None")
+                    //.domain("sorimap.it.com")
                     .path("/")
-                    .maxAge(60 * 60 * 24) // 24시간
+                    .maxAge(60 * 60 * 24 * 14) // 14일
                     .build();
 
             response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
             response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-            // 5. 프론트에 내려줄 데이터
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("nickname", kakaoUser.getNickname());
+// 5. 프론트로 리다이렉트 (JSON 응답 대신 프론트 주소로 보내기)
+            response.sendRedirect("https://gangnangkong.netlify.app");
 
-            return ResponseEntity.ok(responseData);
+            return null; // sendRedirect로 응답했으므로 body 없음
+
 
         } catch (Exception e) {
             log.error("카카오 로그인 실패", e);
             return ResponseEntity.status(500).body("카카오 로그인 실패: " + e.getMessage());
         }
     }
+
 }

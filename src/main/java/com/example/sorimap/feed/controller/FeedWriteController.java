@@ -21,14 +21,19 @@ public class FeedWriteController {
     private final FeedWriteService feedWriteService;
     private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 파싱용
 
-    /** 피드 작성 (제목, 내용, 위치 + 다중 이미지 업로드) */
+    /**
+     * 피드 작성 (제목, 내용, kakaoPlaceId + 다중 이미지 업로드)
+     * 프론트에서 multipart/form-data 로 전송:
+     *   - feed: JSON (title, content, kakaoPlaceId, lat, lng, address)
+     *   - images: 파일 배열 (선택)
+     */
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> createFeed(HttpServletRequest request,
                                         @RequestParam("feed") String feedJson,
                                         @RequestPart(value = "images", required = false) List<MultipartFile> images
     ) throws IOException {
 
-        // JSON 문자열을 DTO로 변환
+        // JSON 문자열 → DTO 변환
         FeedRequestDto dto = objectMapper.readValue(feedJson, FeedRequestDto.class);
 
         Long userId = (Long) request.getAttribute("userId");

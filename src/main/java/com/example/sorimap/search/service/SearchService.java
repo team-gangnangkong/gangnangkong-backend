@@ -6,9 +6,11 @@ import com.example.sorimap.search.dto.SearchResultDto;
 import com.example.sorimap.search.repository.LocationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
@@ -16,39 +18,44 @@ public class SearchService {
 
     private final LocationRepository locationRepository;
 
-    /**
-     * 키워드로 검색 결과 반환 (초성/일반 검색 통합)
-     */
+    /** (선택) DB 기반 검색을 유지하는 경우만 사용 */
     public List<SearchResultDto> getSearchResults(String keyword) {
-        boolean isChosung = keyword.matches("^[ㄱ-ㅎ]+$"); // 초성만 있는지 판별
-
-        List<LocationEntity> results;
-        if (isChosung) {
-            // 초성 검색
-            results = locationRepository.findByInitialsContaining(keyword);
-        } else {
-            // 일반 한글/영문 검색
-            results = locationRepository.findByNameContaining(keyword);
-        }
+        boolean isChosung = keyword.matches("^[ㄱ-ㅎ]+$");
+        List<LocationEntity> results = isChosung
+                ? locationRepository.findByInitialsContaining(keyword)
+                : locationRepository.findByNameContaining(keyword);
 
         return results.stream()
                 .map(loc -> SearchResultDto.builder()
-                        .id(loc.getId())
+                        .kakaoPlaceId(loc.getKakaoPlaceId())  // ✅ 변경
                         .name(loc.getName())
                         .address(loc.getAddress())
                         .latitude(loc.getLatitude())
                         .longitude(loc.getLongitude())
                         .build())
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     /**
-     * 사용자가 위치 선택 시 처리
-     * - 여기서는 DB에서 확인만 하지만, 필요시 세션/로그 저장 가능
+     * 장소 선택 저장: kakaoPlaceId 기준 Upsert
+     * - 없으면 생성, 있으면 최신 정보 업데이트
+     * - 내부 PK(id) 반환(선택)
      */
-    public void selectLocation(LocationSelectDto dto) {
-        locationRepository.findById(dto.getId())
-                .orElseThrow(() -> new IllegalArgumentException("해당 위치를 찾을 수 없습니다."));
-        // 선택된 위치를 이용해 지도/피드 필터링 로직과 연동 가능
+    @Transactional
+    public Long selectLocation(LocationSelectDto dto) {
+        if (dto.getKakaoPlaceId() == null || dto.getLatitude() == null || dto.getLongitude() == null) {
+            throw new IllegalArgumentException("kakaoPlaceId, latitude, longitude는 필수입니다.");
+        }
+
+        LocationEntity entity = locationRepository.findByKakaoPlaceId(dto.getKakaoPlaceId())
+                .orElseGet(LocationEntity::new);
+
+        entity.setKakaoPlaceId(dto.getKakaoPlaceId());
+        entity.setName(dto.getName());
+        entity.setAddress(dto.getAddress());
+        entity.setLatitude(dto.getLatitude());
+        entity.setLongitude(dto.getLongitude());
+        // initials는 필요 시 별도 로직으로 세팅
+        return locationRepository.save(entity).getId();
     }
 }

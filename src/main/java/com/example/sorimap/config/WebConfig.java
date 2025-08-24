@@ -15,12 +15,13 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOriginPatterns("*")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedOrigins("https://gangnangkong.netlify.app")
+                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS") // ✅ PATCH 추가
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);
     }
+
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -30,7 +31,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/comments/**",
                         "/api/reactions/**",
                         "/api/user/**",
-                        "/api/users/**",   // ✅ 프로필 관련 추가
+                        "/api/users/**",   // ✅ 프로필 관련
                         "/api/mypage/**"
                 )
                 .excludePathPatterns(
