@@ -18,11 +18,15 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        // ✅ Preflight는 인증 없이 통과
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+
         String uri = request.getRequestURI();
         String method = request.getMethod();
 
-        // ✅ 피드 조회(GET)는 로그인 없이 허용
-        // 단, "/api/feeds/my" 요청은 내 피드 조회이므로 로그인 필요
+        // ✅ 공개 피드 조회(GET)는 통과
         if (uri.startsWith("/api/feeds")
                 && "GET".equalsIgnoreCase(method)
                 && !uri.startsWith("/api/feeds/my")) {
@@ -30,7 +34,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // ✅ 나머지는 토큰 검증 필요
+        // ✅ 나머지는 토큰 검증
         String token = getTokenFromCookies(request);
         if (token == null) {
             log.warn("❌ ACCESS-TOKEN 없음 (URI = {})", uri);
@@ -39,12 +43,8 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         try {
-            Long userId = jwtService.getUserIdFromToken(token); // JWT에서 userId 추출
-            if (userId == null) {
-                throw new IllegalArgumentException("userId 추출 실패");
-            }
-
-            // 컨트롤러에서 꺼내쓸 수 있게 userId 저장
+            Long userId = jwtService.getUserIdFromToken(token);
+            if (userId == null) throw new IllegalArgumentException("userId 추출 실패");
             request.setAttribute("userId", userId);
             log.info("✅ JWT 인증 성공: userId = {}, URI = {}", userId, uri);
             return true;

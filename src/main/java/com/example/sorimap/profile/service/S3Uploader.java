@@ -20,7 +20,7 @@ import java.util.UUID;
 public class S3Uploader {
 
     private final S3Client s3Client;
-    private final String bucketName = "sorimap"; // 👉 application.properties 로 빼는 게 좋음
+    private final String bucketName = "sorimap"; // 👉 application.properties 로 빼는 게 가장 좋음
 
     /** (기존) 랜덤 파일명으로 업로드 */
     public String uploadFile(MultipartFile file) throws IOException {
@@ -42,6 +42,7 @@ public class S3Uploader {
             Path tempFile = Files.createTempFile("upload-", ext);
             file.transferTo(tempFile.toFile());
 
+            // ✅ 업로드 요청 (ACL 제거 → 버킷 정책으로 관리)
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)
@@ -51,6 +52,8 @@ public class S3Uploader {
             s3Client.putObject(putObjectRequest, tempFile);
 
             log.info("✅ 파일 업로드 완료: {}", key);
+
+            // ✅ S3 원본 URL 반환
             return "https://" + bucketName + ".s3.amazonaws.com/" + key;
 
         } catch (Exception e) {

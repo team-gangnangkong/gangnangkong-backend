@@ -37,11 +37,11 @@ public class Feed {
     @Column(nullable = false)
     private FeedStatus status = FeedStatus.OPEN;
 
-    private String address;
+    private String address;  // ✅ 전체 주소만 저장
     private Double lat;
     private Double lng;
 
-    // ✅ LocationEntity FK 연결
+    // ✅ Kakao 장소(LocationEntity)와 연결
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id")
     private LocationEntity location;

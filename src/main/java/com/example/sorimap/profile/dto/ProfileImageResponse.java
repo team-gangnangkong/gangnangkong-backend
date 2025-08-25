@@ -7,5 +7,5 @@ import lombok.Getter;
 @AllArgsConstructor
 public class ProfileImageResponse {
     private String message;
-    private String imageUrl;
+    private String imageUrl; // 기본이미지일 때는 null
 }

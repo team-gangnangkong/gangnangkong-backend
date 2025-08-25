@@ -18,7 +18,10 @@ public class FeedResponseDto {
     private FeedType type;
     private Sentiment sentiment;
     private FeedStatus status;
-    private String address;
+
+    private String address;   // 전체 주소
+    private String district;  // ✅ address에서 추출한 구 (예: 수정구, 중원구, 분당구)
+
     private Double lat;
     private Double lng;
 

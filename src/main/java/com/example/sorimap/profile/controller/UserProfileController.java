@@ -34,8 +34,9 @@ public class UserProfileController {
             @RequestParam(value = "image", required = false) MultipartFile imageFile) {
 
         Long userId = jwtService.getUserIdFromToken(token);
-        String imageUrl = userProfileService.updateProfileImage(userId, imageFile);
+        // ✅ 서비스가 ProfileImageResponse 바로 반환
+        ProfileImageResponse response = userProfileService.updateProfileImage(userId, imageFile);
 
-        return ResponseEntity.ok(new ProfileImageResponse("프로필 이미지가 정상적으로 변경되었습니다.", imageUrl));
+        return ResponseEntity.ok(response);
     }
 }

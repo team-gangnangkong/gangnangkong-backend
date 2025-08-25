@@ -100,6 +100,9 @@ public class FeedReadService {
                 .map(u -> u.getNickname())
                 .orElse("알 수 없음");
 
+        // ✅ address에서 district 추출
+        String district = extractDistrict(feed.getAddress());
+
         return FeedResponseDto.builder()
                 .id(feed.getId())
                 .title(feed.getTitle())
@@ -107,7 +110,8 @@ public class FeedReadService {
                 .type(feed.getType())
                 .sentiment(feed.getSentiment())
                 .status(feed.getStatus())
-                .address(feed.getAddress())
+                .address(feed.getAddress())     // 전체 주소
+                .district(district)             // ✅ 추출된 district
                 .lat(feed.getLat())
                 .lng(feed.getLng())
                 .kakaoPlaceId(feed.getLocation() != null ? feed.getLocation().getKakaoPlaceId() : null)
@@ -117,6 +121,13 @@ public class FeedReadService {
                 .createdAt(feed.getCreatedAt())
                 .build();
     }
+
+    /** ✅ address에서 구 이름 추출 */
+    private String extractDistrict(String address) {
+        if (address == null) return null;
+        if (address.contains("수정구")) return "수정구";
+        if (address.contains("중원구")) return "중원구";
+        if (address.contains("분당구")) return "분당구";
+        return "기타";
+    }
 }
-
-

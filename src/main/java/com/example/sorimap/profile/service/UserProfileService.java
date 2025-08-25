@@ -1,25 +1,21 @@
 package com.example.sorimap.profile.service;
 
 import com.example.sorimap.kakao.entity.KakaoUser;
-import com.example.sorimap.kakao.repository.KakaoUserRepository; // ✅ 패키지 수정
+import com.example.sorimap.kakao.repository.KakaoUserRepository;
+import com.example.sorimap.profile.dto.ProfileImageResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
-import com.example.sorimap.profile.service.S3Uploader;
 
 @Service
 @RequiredArgsConstructor
 public class UserProfileService {
 
-    private final KakaoUserRepository kakaoUserRepository; // ✅ 이제 정상 인식됨
+    private final KakaoUserRepository kakaoUserRepository;
     private final S3Uploader s3Uploader;
-
-    @Value("${app.default-profile-image}")
-    private String defaultProfileImageUrl;
 
     /** 닉네임 변경 */
     @Transactional
@@ -39,24 +35,35 @@ public class UserProfileService {
 
     /** 프로필 이미지 변경 */
     @Transactional
-    public String updateProfileImage(Long kakaoId, MultipartFile file) {
+    public ProfileImageResponse updateProfileImage(Long kakaoId, MultipartFile file) {
         KakaoUser user = kakaoUserRepository.findById(kakaoId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        if (user.getProfileImageUrl() != null && !user.getProfileImageUrl().equals(defaultProfileImageUrl)) {
+        // 기존 이미지 삭제 (단, 기본이미지는 삭제하지 않음)
+        if (user.getProfileImageUrl() != null && !user.getProfileImageUrl().equals("DEFAULT")) {
             s3Uploader.deleteByUrl(user.getProfileImageUrl());
         }
 
-        String newUrl = defaultProfileImageUrl;
+        String newUrl = null;
+
         if (file != null && !file.isEmpty()) {
+            // ✅ 새 파일 업로드 → S3 URL 반환
             validateImageExtension(file.getOriginalFilename());
             String key = "profile/%s-%s".formatted(UUID.randomUUID(), file.getOriginalFilename());
             newUrl = s3Uploader.upload(file, key);
+            user.setProfileImageUrl(newUrl);
+        } else {
+            // ✅ 파일 안 올렸으면 무조건 "DEFAULT" 저장
+            user.setProfileImageUrl("DEFAULT");
         }
 
-        user.setProfileImageUrl(newUrl);
         kakaoUserRepository.save(user);
-        return newUrl;
+
+        // ✅ 응답: 업로드 했으면 S3 URL, 기본이면 null
+        return new ProfileImageResponse(
+                "프로필 이미지가 변경되었습니다.",
+                (newUrl != null ? newUrl : null)
+        );
     }
 
     private void validateImageExtension(String filename) {
