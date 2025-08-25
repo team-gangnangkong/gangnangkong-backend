@@ -8,7 +8,6 @@ import lombok.Setter;
 public class FeedRequestDto {
     private String title;
     private String content;
-   // private FeedType type;     // MINWON / MUNHWA(or CULTURE)
     private String address;
     private double lat;
     private double lng;
